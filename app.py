@@ -16,8 +16,13 @@ cpustressfactor = os.getenv('CPUSTRESSFACTOR', 1)
 memstressfactor = os.getenv('MEMSTRESSFACTOR', 1)
 ddb_aws_region = os.getenv('DDB_AWS_REGION')
 ddb_table_name = os.getenv('DDB_TABLE_NAME', "votingapp-restaurants")
+ddb_endpoint_url = os.getenv('DDB_ENDPOINT_URL')
 
-ddb = boto3.resource('dynamodb', region_name=ddb_aws_region)
+ddb = boto3.resource(
+    'dynamodb',
+    region_name=ddb_aws_region,
+    endpoint_url=ddb_endpoint_url
+)
 ddbtable = ddb.Table(ddb_table_name)
 
 print("The cpustressfactor variable is set to: " + str(cpustressfactor))

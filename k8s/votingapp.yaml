@@ -1,0 +1,85 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: votingapp
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: votingapp
+  template:
+    metadata:
+      labels:
+        app: votingapp
+    spec:
+      initContainers:
+        - name: initialize-dynamodb
+          image: votingapp:local
+          imagePullPolicy: IfNotPresent
+          command:
+            - python3
+            - /app/scripts/init_dynamodb.py
+          env:
+            - name: DDB_AWS_REGION
+              value: us-east-1
+            - name: DDB_TABLE_NAME
+              value: votingapp-restaurants
+            - name: DDB_ENDPOINT_URL
+              value: http://dynamodb:8000
+            - name: AWS_ACCESS_KEY_ID
+              value: local
+            - name: AWS_SECRET_ACCESS_KEY
+              value: local
+      containers:
+        - name: votingapp
+          image: votingapp:local
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 8080
+          env:
+            - name: DDB_AWS_REGION
+              value: us-east-1
+            - name: DDB_TABLE_NAME
+              value: votingapp-restaurants
+            - name: DDB_ENDPOINT_URL
+              value: http://dynamodb:8000
+            - name: AWS_ACCESS_KEY_ID
+              value: local
+            - name: AWS_SECRET_ACCESS_KEY
+              value: local
+          startupProbe:
+            httpGet:
+              path: /
+              port: http
+            periodSeconds: 5
+            failureThreshold: 24
+          livenessProbe:
+            httpGet:
+              path: /
+              port: http
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /
+              port: http
+            periodSeconds: 5
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 1
+              memory: 512Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: votingapp
+spec:
+  selector:
+    app: votingapp
+  ports:
+    - name: http
+      port: 8080
+      targetPort: http
